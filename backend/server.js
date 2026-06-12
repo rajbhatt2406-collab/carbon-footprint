@@ -47,7 +47,11 @@ const authLimiter = rateLimit({
 // Enable CORS with explicit origins
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
-  : ['https://ecolensaicarbonfootprint.netlify.app', 'http://localhost:5173'];
+  : [
+      'https://ecolensaicarbonfootprint.netlify.app',
+      'https://dapper-squirrel-32d5de.netlify.app',
+      'http://localhost:5173'
+    ];
 
 app.use(cors({
   origin: function (origin, callback) {
