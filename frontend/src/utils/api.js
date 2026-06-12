@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://carbon-footprint-dl81.onrender.com/api';
+import { BASE_URL } from '../config/api';
 
 /**
  * Custom request wrapper to talk to the EcoLens Express Backend
