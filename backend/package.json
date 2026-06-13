@@ -19,12 +19,17 @@
     "firebase-admin": "^12.1.1",
     "helmet": "^8.2.0",
     "hpp": "^0.2.3",
+    "joi": "^18.2.1",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1"
   },
   "devDependencies": {
+    "@types/node": "^25.9.3",
     "jest": "^30.4.2",
     "nodemon": "^3.1.2",
-    "supertest": "^7.2.2"
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.11",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
   }
 }

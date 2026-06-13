@@ -27,7 +27,15 @@ function readDb() {
 
 function writeDb(data) {
   try {
-    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
+    if (process.env.NODE_ENV === 'test') {
+      fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
+    } else {
+      fs.writeFile(DB_PATH, JSON.stringify(data, null, 2), 'utf8', (err) => {
+        if (err) {
+          console.error('Error writing mock database:', err);
+        }
+      });
+    }
   } catch (err) {
     console.error('Error writing mock database:', err);
   }

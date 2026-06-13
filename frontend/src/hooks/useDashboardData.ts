@@ -1,18 +1,40 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { api } from '../utils/api';
 import { formatShortDate } from '../utils/formatters';
+import { Footprint, FootprintSummary } from '../types/Footprint';
+import { Goal } from '../types/Goal';
+
+export interface PieDataItem {
+  name: string;
+  value: number;
+}
+
+export interface LineDataItem {
+  name: string;
+  CO2: number;
+}
+
+export interface UseDashboardDataResult {
+  summary: FootprintSummary | null;
+  history: Footprint[];
+  activeGoal: Goal | null;
+  latestFootprint: Footprint | null;
+  pieData: PieDataItem[];
+  lineData: LineDataItem[];
+  loading: boolean;
+  error: string;
+  refetch: () => Promise<void>;
+}
 
 /**
  * Custom hook to manage fetching and preparing dashboard metrics.
- * Uses Promise.all to optimize query load performance.
- * @returns {Object} Dashboard state and refetch trigger
  */
-export function useDashboardData() {
-  const [summary, setSummary] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [activeGoal, setActiveGoal] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+export function useDashboardData(): UseDashboardDataResult {
+  const [summary, setSummary] = useState<FootprintSummary | null>(null);
+  const [history, setHistory] = useState<Footprint[]>([]);
+  const [activeGoal, setActiveGoal] = useState<Goal | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
 
   const loadDashboardData = useCallback(async () => {
     try {
@@ -20,16 +42,16 @@ export function useDashboardData() {
       setError('');
       // Run queries in parallel to eliminate waterfall latency
       const [summaryData, historyLogs, goals] = await Promise.all([
-        api.get('/footprint-logs/summary'),
-        api.get('/footprint-logs/history'),
-        api.get('/goals')
+        api.get<FootprintSummary>('/footprint-logs/summary'),
+        api.get<Footprint[]>('/footprint-logs/history'),
+        api.get<Goal[]>('/goals')
       ]);
 
       setSummary(summaryData);
       setHistory(historyLogs);
       const active = goals.find(g => !g.completed) || null;
       setActiveGoal(active);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load dashboard metrics:', err);
       setError('Could not retrieve dashboard statistics. Ensure backend is running.');
     } finally {
@@ -43,7 +65,7 @@ export function useDashboardData() {
 
   const latestFootprint = useMemo(() => summary?.current || null, [summary]);
 
-  const pieData = useMemo(() => {
+  const pieData = useMemo<PieDataItem[]>(() => {
     if (!latestFootprint) return [];
     return [
       { name: 'Transportation', value: latestFootprint.breakdown.transportation },
@@ -53,7 +75,7 @@ export function useDashboardData() {
     ].filter(item => item.value > 0);
   }, [latestFootprint]);
 
-  const lineData = useMemo(() => {
+  const lineData = useMemo<LineDataItem[]>(() => {
     return history
       .map(log => ({
         name: formatShortDate(log.date),

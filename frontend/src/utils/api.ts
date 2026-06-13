@@ -3,11 +3,11 @@ import { BASE_URL } from '../config/api';
 /**
  * Custom request wrapper to talk to the EcoLens Express Backend
  */
-export async function apiRequest(endpoint, options = {}) {
+export async function apiRequest<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('ecolens_token');
   
-  const headers = {
-    ...options.headers,
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string>),
   };
 
   // Do not set Content-Type header if sending FormData (Multer OCR uploads)
@@ -19,7 +19,7 @@ export async function apiRequest(endpoint, options = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const config = {
+  const config: RequestInit = {
     ...options,
     headers,
   };
@@ -35,28 +35,31 @@ export async function apiRequest(endpoint, options = {}) {
   return response.json();
 }
 
-const getCache = {};
+const getCache: Record<string, Promise<any> | undefined> = {};
 
 /**
  * Clears the internal GET request cache.
  */
-export function clearApiCache() {
+export function clearApiCache(): void {
   for (const key in getCache) {
     delete getCache[key];
   }
 }
 
-const isTest = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test';
+const isTest = typeof globalThis !== 'undefined' && 
+  (globalThis as any).process && 
+  (globalThis as any).process.env && 
+  (globalThis as any).process.env.NODE_ENV === 'test';
 
 export const api = {
-  get(endpoint) {
+  get<T = any>(endpoint: string): Promise<T> {
     if (isTest) {
-      return apiRequest(endpoint, { method: 'GET' });
+      return apiRequest<T>(endpoint, { method: 'GET' });
     }
     if (getCache[endpoint]) {
-      return getCache[endpoint];
+      return getCache[endpoint] as Promise<T>;
     }
-    const responsePromise = apiRequest(endpoint, { method: 'GET' });
+    const responsePromise = apiRequest<T>(endpoint, { method: 'GET' });
     getCache[endpoint] = responsePromise;
     // Don't cache rejected promises
     responsePromise.catch(() => {
@@ -64,29 +67,28 @@ export const api = {
     });
     return responsePromise;
   },
-  post(endpoint, body) {
+  post<T = any>(endpoint: string, body?: any): Promise<T> {
     if (!isTest) {
       clearApiCache();
     }
-    return apiRequest(endpoint, {
+    return apiRequest<T>(endpoint, {
       method: 'POST',
       body: body instanceof FormData ? body : JSON.stringify(body),
     });
   },
-  put(endpoint, body) {
+  put<T = any>(endpoint: string, body?: any): Promise<T> {
     if (!isTest) {
       clearApiCache();
     }
-    return apiRequest(endpoint, {
+    return apiRequest<T>(endpoint, {
       method: 'PUT',
       body: JSON.stringify(body),
     });
   },
-  delete(endpoint) {
+  delete<T = any>(endpoint: string): Promise<T> {
     if (!isTest) {
       clearApiCache();
     }
-    return apiRequest(endpoint, { method: 'DELETE' });
+    return apiRequest<T>(endpoint, { method: 'DELETE' });
   }
 };
-

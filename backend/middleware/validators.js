@@ -1,93 +1,61 @@
-const { body, param, validationResult } = require('express-validator');
+const Joi = require('joi');
+const registerSchema = require('../schemas/registerSchema');
+const loginSchema = require('../schemas/loginSchema');
+const footprintSchema = require('../schemas/footprintSchema');
+const goalSchema = require('../schemas/goalSchema');
 
 /**
- * Middleware to check validation results.
- * If errors are found, returns a 400 response with detailed error messages.
+ * Higher-order middleware to validate req.body against a Joi schema.
  */
-const validate = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+const validateBody = (schema) => (req, res, next) => {
+  const { error } = schema.validate(req.body, { abortEarly: false, allowUnknown: true });
+  if (error) {
+    const formattedErrors = error.details.map(err => ({
+      msg: err.message,
+      path: err.path[0],
+      location: 'body'
+    }));
+    return res.status(400).json({ errors: formattedErrors });
   }
   next();
 };
 
-const registerValidator = [
-  body('email')
-    .trim()
-    .notEmpty().withMessage('Email is required')
-    .isEmail().withMessage('Please provide a valid email address')
-    .normalizeEmail(),
-  body('password')
-    .notEmpty().withMessage('Password is required')
-    .isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
-  body('displayName')
-    .optional()
-    .trim()
-    .isLength({ min: 1, max: 50 }).withMessage('Display name must be between 1 and 50 characters'),
-  validate
-];
+const registerValidator = validateBody(registerSchema);
+const loginValidator = validateBody(loginSchema);
+const footprintValidator = validateBody(footprintSchema);
+const goalValidator = validateBody(goalSchema);
 
-const loginValidator = [
-  body('email')
-    .trim()
-    .notEmpty().withMessage('Email is required')
-    .isEmail().withMessage('Please provide a valid email address'),
-  body('password')
-    .notEmpty().withMessage('Password is required'),
-  validate
-];
+// Custom validator to check both req.params.id and req.body.currentProgress
+const goalProgressSchema = Joi.object({
+  id: Joi.string().required()
+    .messages({
+      'any.required': 'Goal ID is required',
+      'string.empty': 'Goal ID is required'
+    }),
+  currentProgress: Joi.number().min(0).required()
+    .messages({
+      'number.base': 'Current progress must be a number',
+      'number.min': 'Current progress cannot be negative',
+      'any.required': 'Current progress is required'
+    })
+});
 
-const footprintValidator = [
-  body('carKm')
-    .optional({ nullable: true, checkFalsy: true })
-    .isNumeric().withMessage('Car km must be a number')
-    .custom(val => Number(val) >= 0).withMessage('Car km cannot be negative'),
-  body('bikeKm')
-    .optional({ nullable: true, checkFalsy: true })
-    .isNumeric().withMessage('Bike km must be a number')
-    .custom(val => Number(val) >= 0).withMessage('Bike km cannot be negative'),
-  body('busKm')
-    .optional({ nullable: true, checkFalsy: true })
-    .isNumeric().withMessage('Bus km must be a number')
-    .custom(val => Number(val) >= 0).withMessage('Bus km cannot be negative'),
-  body('trainKm')
-    .optional({ nullable: true, checkFalsy: true })
-    .isNumeric().withMessage('Train km must be a number')
-    .custom(val => Number(val) >= 0).withMessage('Train km cannot be negative'),
-  body('electricityKwh')
-    .optional({ nullable: true, checkFalsy: true })
-    .isNumeric().withMessage('Electricity kWh must be a number')
-    .custom(val => Number(val) >= 0).withMessage('Electricity kWh cannot be negative'),
-  body('foodHabit')
-    .notEmpty().withMessage('Food habits are required')
-    .isString().withMessage('Food habit must be a string'),
-  body('shoppingHabit')
-    .notEmpty().withMessage('Shopping habits are required')
-    .isString().withMessage('Shopping habit must be a string'),
-  validate
-];
-
-const goalValidator = [
-  body('targetValue')
-    .notEmpty().withMessage('Target value is required')
-    .isNumeric().withMessage('Target value must be a number')
-    .custom(val => Number(val) > 0).withMessage('Target value must be greater than zero'),
-  body('endDate')
-    .optional()
-    .isISO8601().withMessage('End date must be a valid ISO 8601 date'),
-  validate
-];
-
-const goalProgressValidator = [
-  param('id')
-    .notEmpty().withMessage('Goal ID is required'),
-  body('currentProgress')
-    .notEmpty().withMessage('Current progress is required')
-    .isNumeric().withMessage('Current progress must be a number')
-    .custom(val => Number(val) >= 0).withMessage('Current progress cannot be negative'),
-  validate
-];
+const goalProgressValidator = (req, res, next) => {
+  const data = {
+    id: req.params.id,
+    currentProgress: req.body.currentProgress
+  };
+  const { error } = goalProgressSchema.validate(data, { abortEarly: false });
+  if (error) {
+    const formattedErrors = error.details.map(err => ({
+      msg: err.message,
+      path: err.path[0],
+      location: err.path[0] === 'id' ? 'params' : 'body'
+    }));
+    return res.status(400).json({ errors: formattedErrors });
+  }
+  next();
+};
 
 module.exports = {
   registerValidator,
