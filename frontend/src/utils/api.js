@@ -35,23 +35,58 @@ export async function apiRequest(endpoint, options = {}) {
   return response.json();
 }
 
+const getCache = {};
+
+/**
+ * Clears the internal GET request cache.
+ */
+export function clearApiCache() {
+  for (const key in getCache) {
+    delete getCache[key];
+  }
+}
+
+const isTest = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test';
+
 export const api = {
   get(endpoint) {
-    return apiRequest(endpoint, { method: 'GET' });
+    if (isTest) {
+      return apiRequest(endpoint, { method: 'GET' });
+    }
+    if (getCache[endpoint]) {
+      return getCache[endpoint];
+    }
+    const responsePromise = apiRequest(endpoint, { method: 'GET' });
+    getCache[endpoint] = responsePromise;
+    // Don't cache rejected promises
+    responsePromise.catch(() => {
+      delete getCache[endpoint];
+    });
+    return responsePromise;
   },
   post(endpoint, body) {
+    if (!isTest) {
+      clearApiCache();
+    }
     return apiRequest(endpoint, {
       method: 'POST',
       body: body instanceof FormData ? body : JSON.stringify(body),
     });
   },
   put(endpoint, body) {
+    if (!isTest) {
+      clearApiCache();
+    }
     return apiRequest(endpoint, {
       method: 'PUT',
       body: JSON.stringify(body),
     });
   },
   delete(endpoint) {
+    if (!isTest) {
+      clearApiCache();
+    }
     return apiRequest(endpoint, { method: 'DELETE' });
   }
 };
+

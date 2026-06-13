@@ -3,7 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { useChallenges } from '../hooks/useChallenges';
 import ErrorAlert from '../components/ErrorAlert';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { Award, Zap, CheckCircle2 } from 'lucide-react';
+import ChallengeCard from '../components/ChallengeCard';
+import { Zap } from 'lucide-react';
 
 /**
  * Weekly eco challenges page. Users complete sustainability challenges to earn points.
@@ -71,61 +72,12 @@ export default function Challenges() {
       {challenges.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6" role="list" aria-label="Weekly challenges">
           {challenges.map((ch) => (
-            <article
+            <ChallengeCard
               key={ch.id}
-              role="listitem"
-              className={`bg-white rounded-3xl p-6 border shadow-sm flex flex-col justify-between min-h-[220px] transition-all duration-300 ${
-                ch.completed ? 'border-emerald-200 bg-emerald-50/10' : 'border-slate-100 hover:shadow-md'
-              }`}
-            >
-              <div>
-                <div className="flex items-start justify-between gap-2">
-                  <span className="text-[10px] font-extrabold text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-md uppercase tracking-wider shrink-0">
-                    +{ch.points} PTS
-                  </span>
-                  {ch.completed && (
-                    <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md uppercase tracking-wider shrink-0 flex items-center">
-                      <CheckCircle2 className="h-3 w-3 mr-0.5" aria-hidden="true" /> Done
-                    </span>
-                  )}
-                </div>
-                
-                <h3 className={`font-extrabold text-base text-slate-800 mt-4 ${ch.completed ? 'line-through text-slate-500' : ''}`}>
-                  {ch.title}
-                </h3>
-                <p className={`text-slate-400 text-xs font-medium leading-relaxed mt-2 ${ch.completed ? 'text-slate-350' : ''}`}>
-                  {ch.description}
-                </p>
-              </div>
-
-              <div className="pt-6 mt-4 border-t border-slate-50">
-                {ch.completed ? (
-                  <button
-                    disabled
-                    aria-label={`${ch.title} - already completed`}
-                    className="w-full bg-emerald-100 text-emerald-800 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center space-x-1 cursor-not-allowed"
-                  >
-                    <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                    <span>Completed</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleComplete(ch.id)}
-                    disabled={completingId === ch.id}
-                    aria-label={`Mark ${ch.title} as completed`}
-                    className="w-full bg-eco-600 hover:bg-eco-700 text-white font-bold py-2.5 rounded-xl text-xs transition-colors flex items-center justify-center"
-                  >
-                    {completingId === ch.id ? (
-                      <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" role="status" aria-label="Completing challenge">
-                        <span className="sr-only">Completing...</span>
-                      </div>
-                    ) : (
-                      'Mark Completed'
-                    )}
-                  </button>
-                )}
-              </div>
-            </article>
+              challenge={ch}
+              completingId={completingId}
+              onComplete={handleComplete}
+            />
           ))}
         </div>
       ) : (
@@ -136,3 +88,4 @@ export default function Challenges() {
     </div>
   );
 }
+

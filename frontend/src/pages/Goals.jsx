@@ -1,10 +1,9 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useGoals } from '../hooks/useGoals';
-import { formatLocalDate } from '../utils/formatters';
-import ProgressBar from '../components/ProgressBar';
 import ErrorAlert from '../components/ErrorAlert';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { Target, Calendar, PlusCircle, CheckCircle, HelpCircle } from 'lucide-react';
+import GoalCard from '../components/GoalCard';
+import { PlusCircle } from 'lucide-react';
 
 /**
  * Goals page for creating and tracking carbon reduction targets.
@@ -27,6 +26,10 @@ export default function Goals() {
     activeGoals,
     completedGoals
   } = useGoals();
+
+  const handleInputChange = useCallback((goalId, value) => {
+    setUpdateVal(prev => ({ ...prev, [goalId]: value }));
+  }, [setUpdateVal]);
 
   if (loading && goals.length === 0) {
     return <LoadingSpinner message="Loading your carbon reduction goals..." />;
@@ -104,47 +107,13 @@ export default function Goals() {
             {activeGoals.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
                 {activeGoals.map((goal) => (
-                  <article key={goal.id} className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm space-y-5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2.5 bg-eco-50 text-eco-600 rounded-xl">
-                          <Target className="h-5 w-5" aria-hidden="true" />
-                        </div>
-                        <div>
-                          <h3 className="font-extrabold text-sm text-slate-800">Reduce {goal.targetValue} kg CO₂</h3>
-                          <p className="text-[10px] text-slate-400 font-semibold mt-0.5 flex items-center">
-                            <Calendar className="h-3 w-3 mr-1" aria-hidden="true" />
-                            Started {formatLocalDate(goal.startDate)} • Ends {formatLocalDate(goal.endDate)}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-bold text-eco-700 bg-eco-100 px-2.5 py-1 rounded-full uppercase tracking-wider">
-                        Active
-                      </span>
-                    </div>
-
-                    <ProgressBar value={goal.currentProgress} max={goal.targetValue} />
-
-                    <div className="flex items-center space-x-3 pt-3 border-t border-slate-50">
-                      <label htmlFor={`progress-${goal.id}`} className="sr-only">Log reduction in kg for goal: Reduce {goal.targetValue} kg CO₂</label>
-                      <input
-                        id={`progress-${goal.id}`}
-                        type="number"
-                        min="0"
-                        name="currentProgress"
-                        placeholder="Log reduction (kg)..."
-                        value={updateVal[goal.id] || ''}
-                        onChange={(e) => setUpdateVal(prev => ({ ...prev, [goal.id]: e.target.value }))}
-                        className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-eco-500 w-full sm:max-w-[150px]"
-                      />
-                      <button
-                        onClick={() => handleUpdateProgress(goal.id)}
-                        className="bg-eco-600 hover:bg-eco-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition-colors shrink-0"
-                      >
-                        Update Progress
-                      </button>
-                    </div>
-                  </article>
+                  <GoalCard
+                    key={goal.id}
+                    goal={goal}
+                    inputValue={updateVal[goal.id] || ''}
+                    onInputChange={handleInputChange}
+                    onUpdateProgress={handleUpdateProgress}
+                  />
                 ))}
               </div>
             ) : (
@@ -160,22 +129,10 @@ export default function Goals() {
             {completedGoals.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
                 {completedGoals.map((goal) => (
-                  <article key={goal.id} className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm flex items-center justify-between gap-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
-                        <CheckCircle className="h-5 w-5" aria-hidden="true" />
-                      </div>
-                      <div>
-                        <h3 className="font-extrabold text-sm text-slate-800 line-through">Reduce {goal.targetValue} kg CO₂</h3>
-                        <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
-                          Achieved on {formatLocalDate(goal.updatedAt || goal.startDate)}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full uppercase tracking-wider shrink-0">
-                      Success
-                    </span>
-                  </article>
+                  <GoalCard
+                    key={goal.id}
+                    goal={goal}
+                  />
                 ))}
               </div>
             ) : (
@@ -191,3 +148,4 @@ export default function Goals() {
     </div>
   );
 }
+

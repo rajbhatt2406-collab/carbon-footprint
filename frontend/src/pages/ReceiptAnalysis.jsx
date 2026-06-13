@@ -57,9 +57,13 @@ export default function ReceiptAnalysis() {
             ) : (
               <div className="space-y-4">
                 {previewUrl ? (
-                  <div className="relative rounded-2xl overflow-hidden border border-slate-100 max-h-[220px] flex items-center justify-center bg-slate-100">
-                    <img src={previewUrl} alt="Preview of uploaded receipt or bill" className="object-contain max-h-[220px] w-full" />
-                  </div>
+                    <img
+                      src={previewUrl}
+                      alt="Preview of uploaded receipt or bill"
+                      loading="lazy"
+                      decoding="async"
+                      className="object-contain max-h-[220px] w-full"
+                    />
                 ) : (
                   <div className="flex items-center space-x-3 bg-slate-50 border border-slate-100 p-4 rounded-2xl">
                     <FileText className="h-8 w-8 text-eco-500" aria-hidden="true" />
